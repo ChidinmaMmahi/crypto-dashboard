@@ -1,2 +1,12 @@
+
+
+:root {
+  color-scheme: light dark;
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
 @import "tailwindcss";
 @import "antd/dist/reset.css";

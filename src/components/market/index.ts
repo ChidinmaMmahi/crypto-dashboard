@@ -1,3 +1,4 @@
 export * from "./Market";
 export * from "./CoinDetails";
-export * from "./CryptoCard";
+export * from "./crypto-card/CryptoCard";
+export * from "./CryptoControls";

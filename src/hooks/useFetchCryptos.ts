@@ -1,17 +1,13 @@
-const coinIds: string[] = [
-  "bitcoin",
-  "ethereum",
-  "cardano",
-  "solana",
-  "dogecoin",
-  "binancecoin",
-];
-
-export const fetchCryptos = async (currency: string) => {
-  const ids = coinIds.join(",");
+export const fetchCryptos = async ({
+  pageParam = 1,
+  currency,
+}: {
+  pageParam?: number;
+  currency: string;
+}) => {
   try {
     const res = await fetch(
-      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&ids=${ids}`
+      `https://api.coingecko.com/api/v3/coins/markets?vs_currency=${currency}&order=market_cap_desc&per_page=250&page=${pageParam}`
     );
     if (!res.ok) throw new Error("Failed to fetch crypto data");
     return res.json();

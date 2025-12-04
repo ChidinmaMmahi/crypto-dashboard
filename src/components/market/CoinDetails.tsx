@@ -3,20 +3,27 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCoinDetail } from "../../hooks";
 import { Loader } from "../../shared";
 
-export const CoinDetail = () => {
-  const { id } = useParams();
+type CoinDetailProps = {
+  id?: string;
+};
+
+export const CoinDetail = ({ id }: CoinDetailProps) => {
+  const params = useParams();
+  const coinId = id || params.id; // use prop first, fallback to route param
+
   const { data, isLoading, error } = useQuery({
-    queryKey: ["coin-detail", id],
-    queryFn: () => fetchCoinDetail(id!),
-    refetchInterval: false,
+    queryKey: ["coin-detail", coinId],
+    queryFn: () => fetchCoinDetail(coinId!),
+    enabled: !!coinId,
     staleTime: 30000,
   });
 
   if (isLoading) return <Loader />;
-  if (error)
+
+  if (error || !data)
     return (
-      <p className="text-center text-red-600 pt-20">
-        Error fetching {data.name} detail
+      <p className="text-center text-red-600 pt-4">
+        Error fetching coin details.
       </p>
     );
 

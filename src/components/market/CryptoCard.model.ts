@@ -17,4 +17,5 @@ export type CryptoCardProps = {
   currency: string;
   searchTerm: string;
   sortMode: "alpha" | "high" | "low" | "";
+  displayMode: "card" | "table";
 };

@@ -5,6 +5,7 @@ import { useState, useMemo, useEffect } from "react";
 import { Card, Modal, Skeleton } from "antd";
 import { CoinDetail } from "../CoinDetails";
 import { CryptoCardLayout } from "./CryptoCardLayout";
+import { Loader } from "../../../shared/Loader";
 import {
   type Coin,
   type CryptoCardProps,
@@ -15,6 +16,7 @@ export const CryptoCard = ({
   currency,
   searchTerm,
   sortMode,
+  displayMode,
 }: CryptoCardProps) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedCoinId, setSelectedCoinId] = useState<string | null>(null);
@@ -35,8 +37,9 @@ export const CryptoCard = ({
     isFetchingNextPage,
     isLoading,
     error,
+    refetch,
   } = useInfiniteQuery({
-    queryKey: ["crypto-prices", currency],
+    queryKey: ["crypto-prices"],
     queryFn: ({ pageParam = 1 }) => fetchCryptos({ pageParam, currency }),
     getNextPageParam: (lastPage, allPages) =>
       lastPage.length === 250 ? allPages.length + 1 : undefined,
@@ -45,12 +48,43 @@ export const CryptoCard = ({
     initialPageParam: 1,
   });
 
+  // Refetch data when currency changes
+  useEffect(() => {
+    refetch();
+  }, [currency, refetch]);
+
   // Auto-load when searching
   useEffect(() => {
     if (searchTerm && hasNextPage) {
       fetchNextPage();
     }
   }, [searchTerm, hasNextPage, fetchNextPage]);
+
+  // Infinite scroll with Intersection Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const target = entries[0];
+        if (target.isIntersecting && hasNextPage && !isFetchingNextPage) {
+          fetchNextPage();
+        }
+      },
+      {
+        rootMargin: "100px", // Trigger when 100px from bottom
+      }
+    );
+
+    const sentinel = document.getElementById("scroll-sentinel");
+    if (sentinel) {
+      observer.observe(sentinel);
+    }
+
+    return () => {
+      if (sentinel) {
+        observer.unobserve(sentinel);
+      }
+    };
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   // Filter + sort
   const filteredCoins = useMemo(() => {
@@ -101,37 +135,85 @@ export const CryptoCard = ({
   }
 
   return (
-    <div className="pb-1">
-      <CryptoCardLayout>
-        {filteredCoins.map((coin) => (
-          <motion.div
-            key={coin.id}
-            className="p-6 rounded-xl shadow bg-white dark:bg-gray-800 cursor-pointer"
-            initial={{ opacity: 0, y: 30 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            whileHover={{ scale: 1.03 }}
-            onClick={() => showModal(coin.id)}
-          >
-            <div className="flex gap-x-1 items-center">
-              <img
-                src={coin.image}
-                alt={`${coin.name} logo`}
-                className="w-8 h-8 mb-2"
-              />
-              <h2 className="text-xl font-bold">{coin.name}</h2>
-            </div>
+    <div className="pb-1 pt-12 sm:pt-0">
+      {displayMode === "card" ? (
+        <CryptoCardLayout>
+          {filteredCoins.map((coin) => (
+            <motion.div
+              key={coin.id}
+              className="p-6 rounded-xl shadow bg-white cursor-pointer"
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              whileHover={{ scale: 1.03 }}
+              onClick={() => showModal(coin.id)}
+            >
+              <div className="flex gap-x-1 items-center">
+                <img
+                  src={coin.image}
+                  alt={`${coin.name} logo`}
+                  className="w-8 h-8 mb-2"
+                />
+                <h2 className="text-xl font-bold">{coin.name}</h2>
+              </div>
 
-            <p className="mt-2 text-lg">
-              Price:&nbsp;
-              <span className="font-medium text-green-500">
-                {currenciesObject[currency]}
-                {coin.current_price.toLocaleString()}
-              </span>
-            </p>
-          </motion.div>
-        ))}
-      </CryptoCardLayout>
+              <p className="mt-2 text-lg">
+                Price:&nbsp;
+                <span className="font-medium text-green-500">
+                  {currenciesObject[currency]}
+                  {coin.current_price.toLocaleString()}
+                </span>
+              </p>
+            </motion.div>
+          ))}
+        </CryptoCardLayout>
+      ) : (
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="w-full min-w-[320px]">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Coin
+                </th>
+                <th className="px-3 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Price
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredCoins.map((coin) => (
+                <motion.tr
+                  key={coin.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4 }}
+                  onClick={() => showModal(coin.id)}
+                >
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap min-w-0">
+                    <div className="flex items-center">
+                      <img
+                        src={coin.image}
+                        alt={`${coin.name} logo`}
+                        className="w-6 h-6 sm:w-8 sm:h-8 mr-2 sm:mr-3 flex-shrink-0"
+                      />
+                      <span className="text-xs sm:text-sm font-medium text-gray-900 truncate max-w-[120px] sm:max-w-none">
+                        {coin.name}
+                      </span>
+                    </div>
+                  </td>
+                  <td className="px-3 sm:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-900">
+                    <span className="font-medium text-green-500">
+                      {currenciesObject[currency]}
+                      {coin.current_price.toLocaleString()}
+                    </span>
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {/* Modal */}
       <Modal
@@ -144,16 +226,10 @@ export const CryptoCard = ({
         {selectedCoinId && <CoinDetail id={selectedCoinId} />}
       </Modal>
 
-      {/* Load More */}
+      {/* Infinite Scroll Sentinel */}
       {hasNextPage && (
-        <div className="flex justify-center my-6">
-          <button
-            onClick={() => fetchNextPage()}
-            disabled={isFetchingNextPage}
-            className="px-6 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-60"
-          >
-            {isFetchingNextPage ? "Loading..." : "Load More"}
-          </button>
+        <div id="scroll-sentinel" className="flex justify-center my-6">
+          {isFetchingNextPage && <Loader />}
         </div>
       )}
     </div>

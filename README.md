@@ -1,73 +1,138 @@
-# React + TypeScript + Vite
+## CoinLytics – Crypto Market Dashboard
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+CoinLytics is a crypto market dashboard built with **React**, **TypeScript**, and **Vite**.  
+It shows live market data from the CoinGecko API, with powerful controls to search, sort, and view coins in either **card** or **table** layout.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## Features
 
-## React Compiler
+- **Live market data**
+  - Fetches coins from the CoinGecko public API
+  - Supports multiple currencies (e.g. USD, NGN, EUR, GBP, JPY)
+- **Market as the default view**
+  - Single–page app: no React Router, the Market is always displayed by default
+- **Header controls**
+  - Global search bar to filter coins by name
+  - Sort toggle cycling through:
+    - Alphabetical (A–Z)
+    - Highest price first
+    - Lowest price first
+    - Back to no sort
+  - Currency selector (dropdown)
+  - Layout toggle: **Card view** ↔ **Table view**
+- **Card view**
+  - Responsive grid of coin cards
+  - Shows coin image, name, and current price
+  - Click a card to open a detailed modal for that coin
+- **Table view**
+  - Responsive table with `Coin` and `Price` columns
+  - Scrolls horizontally on very small screens when needed
+  - Keeps a proper table look on all screen sizes
+- **Infinite scrolling**
+  - Uses `@tanstack/react-query` `useInfiniteQuery` to load more coins as you scroll
+  - Spinner loader appears while additional pages are being fetched
+- **Coin detail modal**
+  - Uses Ant Design `Modal`
+  - Shows richer information for the selected coin (fetched from CoinGecko)
+- **Tech stack**
+  - React 19 + TypeScript
+  - Vite
+  - Tailwind CSS
+  - @tanstack/react-query
+  - Ant Design (for modal & skeletons)
+  - framer-motion (animations)
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+---
 
-## Expanding the ESLint configuration
+## Project Structure (Key Files)
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- `src/main.tsx` – App bootstrap
+- `src/App.tsx` – Top-level layout and shared state:
+  - Manages `currency`, `searchTerm`, `sortMode`, and `displayMode`
+  - Renders `Header` and `Market`
+- `src/components/Header.tsx` – Logo + search bar + sort button + layout toggle + currency selector
+- `src/components/market/Market.tsx` – Thin container that passes props into `CryptoCard`
+- `src/components/market/crypto-card/CryptoCard.tsx`
+  - Fetches paginated market data (via `useInfiniteQuery` and `fetchCryptos`)
+  - Applies search + sort
+  - Renders either cards or table based on `displayMode`
+  - Handles infinite scroll and coin detail modal
+- `src/hooks/useFetchCryptos.ts` – API helpers for:
+  - `fetchCryptos` – market list
+  - `fetchCoinDetail` – single coin detail
+- `src/shared/Loader.tsx` – Reusable loading spinner
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+---
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Getting Started
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+### Prerequisites
+
+- **Node.js** (recommended: 18+)
+- **npm** (comes with Node)
+
+### Install dependencies
+
+```bash
+npm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Run the dev server
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
 ```
+
+By default Vite runs on `http://localhost:5173` (or another port if that one is busy).
+
+### Build for production
+
+```bash
+npm run build
+```
+
+### Preview the production build
+
+```bash
+npm run preview
+```
+
+---
+
+## Environment & API
+
+This project uses the **public CoinGecko API**, so no API key or `.env` configuration is required.  
+The relevant requests are in `src/hooks/useFetchCryptos.ts`.
+
+> Note: CoinGecko has rate limits; heavy usage may hit those limits in development.
+
+---
+
+## Scripts
+
+- `npm run dev` – Start Vite dev server
+- `npm run build` – Type-check and build for production
+- `npm run preview` – Preview the production build locally
+- `npm run lint` – Run ESLint on the project
+
+---
+
+## Styling & UX
+
+- Tailwind CSS for utility-first styling
+- Responsive layouts for both card and table views
+- Smooth animations using framer-motion for:
+  - Card/table item entrance
+  - Hover interactions
+- Skeleton loaders (AntD `Skeleton`) for initial load
+
+---
+
+## Notes & Limitations
+
+- No authentication or user accounts
+- No routing – everything happens on a single page
+- Theme is fixed to light mode (no dark-mode toggle)
+
+This README reflects the current state of the CoinLytics crypto dashboard codebase.
